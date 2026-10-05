@@ -1,0 +1,232 @@
+{% extends 'projects/base.html' %}
+
+{% block title %}{{ task.title }}{% endblock %}
+
+{% block content %}
+
+<!-- Task Header -->
+<div class="page-header">
+    <div>
+        <div class="project-header-meta">
+            <a href="{% url 'project_detail' pk=task.project.pk %}" class="breadcrumb-link">{{ task.project.name }}</a>
+            <span class="breadcrumb-sep">›</span>
+            <a href="{% url 'board' pk=task.project.pk %}" class="breadcrumb-link">Board</a>
+            <span class="breadcrumb-sep">›</span>
+            <span>Task</span>
+        </div>
+        <h1 class="page-title task-detail-title">{{ task.title }}</h1>
+        <div class="task-badges">
+            <span class="status-badge status-{{ task.status }}">{{ task.get_status_display }}</span>
+            <span class="priority-badge priority-{{ task.priority }}">{{ task.get_priority_display }}</span>
+            {% if task.is_overdue %}<span class="overdue-badge">⚠ Overdue</span>{% endif %}
+        </div>
+    </div>
+    <div class="task-header-actions">
+        {% if can_edit %}
+        <a href="{% url 'task_edit' pk=task.pk %}" class="btn btn-outline">Edit Task</a>
+        {% endif %}
+        {% if is_manager or task.created_by == request.user %}
+        <a href="{% url 'task_delete' pk=task.pk %}" class="btn btn-danger-outline"
+           onclick="return confirm('Delete this task? This cannot be undone.')">Delete</a>
+        {% endif %}
+    </div>
+</div>
+
+<div class="task-detail-grid">
+
+    <!-- Left: Description + Comments -->
+    <div class="task-detail-main">
+
+        <!-- Description -->
+        <div class="card">
+            <div class="card-header"><h2 class="card-title">Description</h2></div>
+            <div class="card-body">
+                {% if task.description %}
+                    <div class="task-description">{{ task.description|linebreaksbr }}</div>
+                {% else %}
+                    <p class="text-muted">No description provided.</p>
+                {% endif %}
+            </div>
+        </div>
+
+        <!-- Quick Status Change -->
+        <div class="card">
+            <div class="card-header"><h2 class="card-title">Change Status</h2></div>
+            <div class="card-body">
+                <form method="post" action="{% url 'task_change_status' pk=task.pk %}" class="status-change-form">
+                    {% csrf_token %}
+                    <div class="status-options">
+                        {% for value, label in task.STATUS_CHOICES %}
+                        <label class="status-option {% if task.status == value %}status-option-active{% endif %}">
+                            <input type="radio" name="status" value="{{ value }}"
+                                   {% if task.status == value %}checked{% endif %}
+                                   onchange="this.form.submit()">
+                            <span class="status-option-label status-{{ value }}">{{ label }}</span>
+                        </label>
+                        {% endfor %}
+                    </div>
+                </form>
+            </div>
+        </div>
+
+        <!-- Comments -->
+        <div class="card" id="comments">
+            <div class="card-header">
+                <h2 class="card-title">Comments <span class="comment-count-badge">{{ task.comment_count }}</span></h2>
+            </div>
+            <div class="card-body p-0">
+
+                {% if comments %}
+                <div class="comments-list">
+                    {% for comment in comments %}
+                    <div class="comment-item" id="comment-{{ comment.pk }}">
+                        <div class="comment-avatar">
+                            {{ comment.author.username|slice:":1"|upper }}
+                        </div>
+                        <div class="comment-body">
+                            <div class="comment-header">
+                                <a href="{% url 'user_profile' username=comment.author.username %}" class="comment-author">
+                                    {{ comment.author.username }}
+                                </a>
+                                <span class="comment-time" title="{{ comment.created_at }}">
+                                    {{ comment.created_at|timesince }} ago
+                                    {% if comment.updated_at != comment.created_at %}
+                                        <em>(edited)</em>
+                                    {% endif %}
+                                </span>
+                            </div>
+                            <div class="comment-content">{{ comment.content|linebreaksbr }}</div>
+                            {% if comment.author == request.user or is_manager %}
+                            <div class="comment-actions">
+                                <form method="post" action="{% url 'comment_delete' pk=comment.pk %}"
+                                      onsubmit="return confirm('Delete this comment?')">
+                                    {% csrf_token %}
+                                    <button type="submit" class="btn-text-danger">Delete</button>
+                                </form>
+                            </div>
+                            {% endif %}
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+                {% else %}
+                <div class="empty-state empty-state-sm">
+                    <p>No comments yet. Be the first to comment!</p>
+                </div>
+                {% endif %}
+
+                <!-- Add Comment Form -->
+                <div class="comment-form-wrap">
+                    <div class="comment-avatar comment-avatar-me">
+                        {{ request.user.username|slice:":1"|upper }}
+                    </div>
+                    <form method="post" action="{% url 'comment_create' task_pk=task.pk %}"
+                          class="comment-form" novalidate>
+                        {% csrf_token %}
+                        {{ comment_form.content }}
+                        {% if comment_form.content.errors %}
+                            <ul class="form-errors">{% for e in comment_form.content.errors %}<li>{{ e }}</li>{% endfor %}</ul>
+                        {% endif %}
+                        <div class="comment-form-actions">
+                            <span class="char-counter" id="commentCounter">0 / 2000</span>
+                            <button type="submit" class="btn btn-primary btn-sm">Post Comment</button>
+                        </div>
+                    </form>
+                </div>
+
+            </div>
+        </div>
+
+    </div>
+
+    <!-- Right: Metadata sidebar -->
+    <aside class="task-detail-sidebar">
+
+        <div class="card">
+            <div class="card-header"><h2 class="card-title">Details</h2></div>
+            <div class="card-body">
+                <dl class="detail-list">
+
+                    <dt>Project</dt>
+                    <dd><a href="{% url 'project_detail' pk=task.project.pk %}">{{ task.project.name }}</a></dd>
+
+                    <dt>Assigned To</dt>
+                    <dd>
+                        {% if task.assigned_to %}
+                            <a href="{% url 'user_profile' username=task.assigned_to.username %}" class="assignee-link">
+                                <span class="assignee-chip-sm">{{ task.assigned_to.username|slice:":1"|upper }}</span>
+                                {{ task.assigned_to.username }}
+                            </a>
+                        {% else %}
+                            <span class="text-muted">Unassigned</span>
+                        {% endif %}
+                    </dd>
+
+                    <dt>Created By</dt>
+                    <dd>
+                        {% if task.created_by %}
+                            <a href="{% url 'user_profile' username=task.created_by.username %}">{{ task.created_by.username }}</a>
+                        {% else %}
+                            <span class="text-muted">Unknown</span>
+                        {% endif %}
+                    </dd>
+
+                    <dt>Status</dt>
+                    <dd><span class="status-badge status-{{ task.status }}">{{ task.get_status_display }}</span></dd>
+
+                    <dt>Priority</dt>
+                    <dd><span class="priority-badge priority-{{ task.priority }}">{{ task.get_priority_display }}</span></dd>
+
+                    <dt>Due Date</dt>
+                    <dd>
+                        {% if task.due_date %}
+                            <span class="{% if task.is_overdue %}overdue{% endif %}">
+                                {% if task.is_overdue %}⚠ {% endif %}{{ task.due_date|date:"F j, Y" }}
+                            </span>
+                        {% else %}
+                            <span class="text-muted">No due date</span>
+                        {% endif %}
+                    </dd>
+
+                    <dt>Created</dt>
+                    <dd><span title="{{ task.created_at }}">{{ task.created_at|date:"M d, Y" }}</span></dd>
+
+                    <dt>Last Updated</dt>
+                    <dd><span title="{{ task.updated_at }}">{{ task.updated_at|timesince }} ago</span></dd>
+
+                    <dt>Comments</dt>
+                    <dd>{{ task.comment_count }}</dd>
+
+                </dl>
+            </div>
+        </div>
+
+        <!-- Navigation -->
+        <div class="card">
+            <div class="card-body">
+                <a href="{% url 'board' pk=task.project.pk %}" class="btn btn-outline btn-full">← Back to Board</a>
+                {% if can_edit %}
+                <a href="{% url 'task_edit' pk=task.pk %}" class="btn btn-ghost btn-full mt-sm">Edit Task</a>
+                {% endif %}
+            </div>
+        </div>
+
+    </aside>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+// Character counter for comment textarea
+(function() {
+    var textarea = document.querySelector('.comment-form textarea');
+    var counter  = document.getElementById('commentCounter');
+    if (!textarea || !counter) return;
+    function update() {
+        counter.textContent = textarea.value.length + ' / 2000';
+    }
+    textarea.addEventListener('input', update);
+    update();
+})();
+</script>
+{% endblock %}

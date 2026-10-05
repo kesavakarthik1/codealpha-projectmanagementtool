@@ -1,0 +1,9 @@
+# ProjectFlow – CodeAlpha Task 3
+# Install with: pip install -r requirements.txt
+#
+# This project was developed and tested with Django 6.1 (Python 3.14).
+# Django 5.1.x is also compatible for Python 3.10–3.12 environments.
+#
+# Core dependency only — SQLite is bundled with Python (no extra DB driver needed).
+
+Django>=5.1,<7.0

@@ -1,0 +1,82 @@
+{% extends 'projects/base.html' %}
+
+{% block title %}Search{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <div>
+        <h1 class="page-title">Search</h1>
+        <p class="page-subtitle">Search across your projects and tasks.</p>
+    </div>
+</div>
+
+<div class="search-page-form">
+    <form method="get" action="{% url 'search' %}" class="search-bar-form">
+        {{ form.q }}
+        <button type="submit" class="btn btn-primary">Search</button>
+    </form>
+</div>
+
+{% if query %}
+<p class="search-results-summary">
+    {% if total_results %}
+        Found <strong>{{ total_results }}</strong> result{{ total_results|pluralize }} for "<em>{{ query }}</em>"
+    {% else %}
+        No results found for "<em>{{ query }}</em>"
+    {% endif %}
+</p>
+
+{% if project_results %}
+<section class="search-section">
+    <h2 class="search-section-title">Projects ({{ project_results.count }})</h2>
+    <div class="search-results">
+        {% for project in project_results %}
+        <a href="{% url 'project_detail' pk=project.pk %}" class="search-result-item">
+            <div class="search-result-icon project-initial-sm">{{ project.name|slice:":1"|upper }}</div>
+            <div class="search-result-body">
+                <span class="search-result-title">{{ project.name }}</span>
+                {% if project.description %}
+                <span class="search-result-desc">{{ project.description|truncatechars:100 }}</span>
+                {% endif %}
+            </div>
+            <span class="status-badge status-{{ project.status }}">{{ project.get_status_display }}</span>
+        </a>
+        {% endfor %}
+    </div>
+</section>
+{% endif %}
+
+{% if task_results %}
+<section class="search-section">
+    <h2 class="search-section-title">Tasks ({{ task_results.count }})</h2>
+    <div class="search-results">
+        {% for task in task_results %}
+        <a href="{% url 'task_detail' pk=task.pk %}" class="search-result-item">
+            <span class="priority-dot priority-dot-{{ task.priority }}"></span>
+            <div class="search-result-body">
+                <span class="search-result-title">{{ task.title }}</span>
+                <span class="search-result-desc">{{ task.project.name }}</span>
+            </div>
+            <span class="status-badge status-{{ task.status }}">{{ task.get_status_display }}</span>
+        </a>
+        {% endfor %}
+    </div>
+</section>
+{% endif %}
+
+{% if not project_results and not task_results %}
+<div class="empty-state">
+    <div class="empty-icon">🔍</div>
+    <h3>No results found</h3>
+    <p>Try a different search term or <a href="{% url 'project_create' %}">create a new project</a>.</p>
+</div>
+{% endif %}
+
+{% else %}
+<div class="empty-state">
+    <div class="empty-icon">🔍</div>
+    <h3>Search your projects</h3>
+    <p>Enter a keyword above to search project names, descriptions, and task titles.</p>
+</div>
+{% endif %}
+{% endblock %}

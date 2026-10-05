@@ -1,0 +1,148 @@
+{% extends 'projects/base.html' %}
+
+{% block title %}{{ profile_user.username }} – Profile{% endblock %}
+
+{% block content %}
+
+<div class="page-header">
+    <div class="profile-header-left">
+        <div class="profile-avatar-xl">{{ profile_user.username|slice:":1"|upper }}</div>
+        <div>
+            <h1 class="page-title">
+                {% if profile_user.get_full_name %}
+                    {{ profile_user.get_full_name }}
+                {% else %}
+                    {{ profile_user.username }}
+                {% endif %}
+            </h1>
+            <p class="profile-username">@{{ profile_user.username }}</p>
+            {% if profile_user.email %}
+            <p class="profile-email">{{ profile_user.email }}</p>
+            {% endif %}
+            <p class="profile-joined">Member since {{ profile_user.date_joined|date:"F Y" }}</p>
+        </div>
+    </div>
+    {% if is_own_profile %}
+    <a href="{% url 'profile_edit' %}" class="btn btn-outline">Edit Profile</a>
+    {% endif %}
+</div>
+
+<div class="profile-grid">
+
+    <!-- Left: Bio + Stats -->
+    <div class="profile-main">
+
+        <!-- Bio -->
+        <div class="card">
+            <div class="card-header">
+                <h2 class="card-title">About</h2>
+                {% if is_own_profile %}
+                <a href="{% url 'profile_edit' %}" class="btn-text-link">Edit →</a>
+                {% endif %}
+            </div>
+            <div class="card-body">
+                {% if profile.bio %}
+                    <p class="profile-bio">{{ profile.bio|linebreaksbr }}</p>
+                {% else %}
+                    <p class="text-muted">
+                        {% if is_own_profile %}
+                            No bio yet. <a href="{% url 'profile_edit' %}">Add one →</a>
+                        {% else %}
+                            This user hasn't written a bio yet.
+                        {% endif %}
+                    </p>
+                {% endif %}
+            </div>
+        </div>
+
+        <!-- Assigned Tasks -->
+        <div class="card">
+            <div class="card-header">
+                <h2 class="card-title">
+                    {% if is_own_profile %}My Assigned Tasks{% else %}Assigned Tasks{% endif %}
+                </h2>
+                <span class="card-count">{{ assigned_tasks_count }}</span>
+            </div>
+            <div class="card-body p-0">
+                {% if assigned_tasks %}
+                <div class="task-list">
+                    {% for task in assigned_tasks %}
+                    <a href="{% url 'task_detail' pk=task.pk %}" class="task-list-item">
+                        <span class="priority-dot priority-dot-{{ task.priority }}"></span>
+                        <div class="task-list-info">
+                            <span class="task-list-title">{{ task.title }}</span>
+                            <span class="task-list-project">{{ task.project.name }}</span>
+                        </div>
+                        <div class="task-list-meta">
+                            <span class="status-badge status-{{ task.status }}">{{ task.get_status_display }}</span>
+                            {% if task.due_date %}
+                            <span class="due-date {% if task.is_overdue %}overdue{% endif %}">
+                                {{ task.due_date|date:"M d" }}
+                            </span>
+                            {% endif %}
+                        </div>
+                    </a>
+                    {% endfor %}
+                </div>
+                {% else %}
+                <div class="empty-state empty-state-sm">
+                    <p>No tasks assigned{% if not is_own_profile %} to this user{% endif %}.</p>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+
+    </div>
+
+    <!-- Right: Projects -->
+    <aside class="profile-sidebar">
+
+        <div class="card">
+            <div class="card-header">
+                <h2 class="card-title">Projects</h2>
+                <span class="card-count">{{ projects.count }}</span>
+            </div>
+            <div class="card-body p-0">
+                {% if projects %}
+                {% for project in projects %}
+                <a href="{% url 'project_detail' pk=project.pk %}" class="sidebar-project-item">
+                    <div class="sidebar-project-icon">{{ project.name|slice:":1"|upper }}</div>
+                    <div class="sidebar-project-info">
+                        <span class="sidebar-project-name">{{ project.name }}</span>
+                        <span class="sidebar-project-meta">
+                            {% if project.owner == profile_user %}Owner{% else %}Member{% endif %}
+                            · {{ project.task_count }} task{{ project.task_count|pluralize }}
+                        </span>
+                    </div>
+                    <span class="status-badge status-{{ project.status }}">{{ project.get_status_display }}</span>
+                </a>
+                {% endfor %}
+                {% else %}
+                <div class="empty-state empty-state-sm">
+                    <p>Not a member of any projects yet.</p>
+                    {% if is_own_profile %}
+                    <a href="{% url 'project_create' %}" class="btn btn-sm btn-primary mt-sm">Create Project</a>
+                    {% endif %}
+                </div>
+                {% endif %}
+            </div>
+        </div>
+
+        <!-- Quick stats -->
+        <div class="card">
+            <div class="card-header"><h2 class="card-title">Activity Stats</h2></div>
+            <div class="card-body">
+                <dl class="detail-list">
+                    <dt>Projects</dt>
+                    <dd>{{ projects.count }}</dd>
+                    <dt>Tasks Assigned</dt>
+                    <dd>{{ assigned_tasks_count }}</dd>
+                    <dt>Joined</dt>
+                    <dd>{{ profile_user.date_joined|date:"M d, Y" }}</dd>
+                </dl>
+            </div>
+        </div>
+
+    </aside>
+</div>
+{% endblock %}

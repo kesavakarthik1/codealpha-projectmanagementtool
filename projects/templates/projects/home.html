@@ -1,0 +1,100 @@
+{% extends 'projects/base.html' %}
+
+{% block title %}Welcome{% endblock %}
+{% block body_class %}home-page{% endblock %}
+
+{% block content %}
+
+<!-- Hero -->
+<section class="hero">
+    <div class="hero-content">
+        <h1 class="hero-title">
+            Manage Projects.<br>
+            <span class="hero-accent">Ship Together.</span>
+        </h1>
+        <p class="hero-subtitle">
+            ProjectFlow is a collaborative project management tool that helps teams
+            organise work, track progress, and communicate — all in one place.
+        </p>
+        <div class="hero-actions">
+            <a href="{% url 'register' %}" class="btn btn-primary btn-lg">Get Started Free</a>
+            <a href="{% url 'login' %}" class="btn btn-outline btn-lg">Sign In</a>
+        </div>
+    </div>
+    <div class="hero-visual" aria-hidden="true">
+        <div class="hero-board-mock">
+            <div class="mock-col">
+                <div class="mock-col-header todo">To Do</div>
+                <div class="mock-card"></div>
+                <div class="mock-card"></div>
+                <div class="mock-card mock-card-sm"></div>
+            </div>
+            <div class="mock-col">
+                <div class="mock-col-header inprogress">In Progress</div>
+                <div class="mock-card mock-card-highlight"></div>
+                <div class="mock-card"></div>
+            </div>
+            <div class="mock-col">
+                <div class="mock-col-header review">Review</div>
+                <div class="mock-card mock-card-sm"></div>
+                <div class="mock-card"></div>
+            </div>
+            <div class="mock-col">
+                <div class="mock-col-header done">Done</div>
+                <div class="mock-card mock-card-done"></div>
+                <div class="mock-card mock-card-done mock-card-sm"></div>
+                <div class="mock-card mock-card-done"></div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- Features -->
+<section class="features">
+    <div class="container">
+        <h2 class="section-title">Everything your team needs</h2>
+        <div class="features-grid">
+            <div class="feature-card">
+                <div class="feature-icon">📋</div>
+                <h3>Project Boards</h3>
+                <p>Visualise your workflow with Kanban-style boards. Move tasks through To Do, In Progress, Review, and Done columns.</p>
+            </div>
+            <div class="feature-card">
+                <div class="feature-icon">✅</div>
+                <h3>Task Management</h3>
+                <p>Create detailed task cards with priorities, due dates, descriptions, and file-level assignments to team members.</p>
+            </div>
+            <div class="feature-card">
+                <div class="feature-icon">👥</div>
+                <h3>Team Collaboration</h3>
+                <p>Invite team members to projects, assign tasks, and communicate through threaded task comments.</p>
+            </div>
+            <div class="feature-card">
+                <div class="feature-icon">💬</div>
+                <h3>Task Comments</h3>
+                <p>Keep all task-related conversation in one place. Comment, reply, and stay in sync without switching tools.</p>
+            </div>
+            <div class="feature-card">
+                <div class="feature-icon">📊</div>
+                <h3>Progress Dashboard</h3>
+                <p>Track completion rates, identify bottlenecks, and get a bird's-eye view of all your active projects.</p>
+            </div>
+            <div class="feature-card">
+                <div class="feature-icon">🔒</div>
+                <h3>Secure Access</h3>
+                <p>Project data is private. Only authenticated members can see and interact with your project information.</p>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- CTA -->
+<section class="cta-section">
+    <div class="container cta-inner">
+        <h2>Ready to get organised?</h2>
+        <p>Create your free account and start managing projects in minutes.</p>
+        <a href="{% url 'register' %}" class="btn btn-primary btn-lg">Create Free Account</a>
+    </div>
+</section>
+
+{% endblock %}

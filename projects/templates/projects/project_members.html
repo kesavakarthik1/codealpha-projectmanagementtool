@@ -1,0 +1,125 @@
+{% extends 'projects/base.html' %}
+
+{% block title %}Members – {{ project.name }}{% endblock %}
+
+{% block content %}
+
+<div class="page-header">
+    <div>
+        <div class="project-header-meta">
+            <a href="{% url 'project_detail' pk=project.pk %}" class="breadcrumb-link">{{ project.name }}</a>
+            <span class="breadcrumb-sep">›</span>
+            <span>Members</span>
+        </div>
+        <h1 class="page-title">Project Members</h1>
+        <p class="page-subtitle">{{ project.member_count }} member{{ project.member_count|pluralize }} in this project.</p>
+    </div>
+    <a href="{% url 'project_detail' pk=project.pk %}" class="btn btn-ghost">← Overview</a>
+</div>
+
+<!-- Project Nav -->
+<nav class="project-subnav">
+    <a href="{% url 'project_detail' pk=project.pk %}" class="subnav-link">Overview</a>
+    <a href="{% url 'board' pk=project.pk %}" class="subnav-link">Board</a>
+    <a href="{% url 'project_members' pk=project.pk %}" class="subnav-link active">Members ({{ project.member_count }})</a>
+</nav>
+
+<div class="members-layout">
+
+    <!-- Member list -->
+    <div class="members-main">
+        <div class="card">
+            <div class="card-header"><h2 class="card-title">Team Members</h2></div>
+            <div class="card-body p-0">
+
+                <!-- Owner row -->
+                <div class="member-row member-row-owner">
+                    <a href="{% url 'user_profile' username=project.owner.username %}" class="member-avatar">
+                        {{ project.owner.username|slice:":1"|upper }}
+                    </a>
+                    <div class="member-details">
+                        <a href="{% url 'user_profile' username=project.owner.username %}" class="member-username">
+                            {{ project.owner.username }}
+                        </a>
+                        {% if project.owner.get_full_name %}
+                        <span class="member-fullname">{{ project.owner.get_full_name }}</span>
+                        {% endif %}
+                        <span class="member-role-badge role-owner">Owner</span>
+                    </div>
+                    <div class="member-joined">
+                        <span class="time-muted">Project owner</span>
+                    </div>
+                </div>
+
+                <!-- Member rows -->
+                {% for membership in memberships %}
+                <div class="member-row">
+                    <a href="{% url 'user_profile' username=membership.user.username %}" class="member-avatar">
+                        {{ membership.user.username|slice:":1"|upper }}
+                    </a>
+                    <div class="member-details">
+                        <a href="{% url 'user_profile' username=membership.user.username %}" class="member-username">
+                            {{ membership.user.username }}
+                        </a>
+                        {% if membership.user.get_full_name %}
+                        <span class="member-fullname">{{ membership.user.get_full_name }}</span>
+                        {% endif %}
+                        <span class="member-role-badge role-{{ membership.role }}">{{ membership.get_role_display }}</span>
+                    </div>
+                    <div class="member-joined">
+                        <span class="time-muted">Joined {{ membership.joined_at|date:"M d, Y" }}</span>
+                    </div>
+                    {% if is_manager %}
+                    <div class="member-actions">
+                        <!-- Change role -->
+                        <form method="post" action="{% url 'project_change_member_role' pk=project.pk user_id=membership.user.pk %}" class="inline-form">
+                            {% csrf_token %}
+                            <select name="role" class="form-control form-control-sm" onchange="this.form.submit()" aria-label="Change role">
+                                <option value="member" {% if membership.role == 'member' %}selected{% endif %}>Member</option>
+                                <option value="manager" {% if membership.role == 'manager' %}selected{% endif %}>Manager</option>
+                            </select>
+                        </form>
+                        <!-- Remove -->
+                        <form method="post" action="{% url 'project_remove_member' pk=project.pk user_id=membership.user.pk %}"
+                              onsubmit="return confirm('Remove {{ membership.user.username }} from this project?')">
+                            {% csrf_token %}
+                            <button type="submit" class="btn btn-sm btn-danger-outline" aria-label="Remove member">Remove</button>
+                        </form>
+                    </div>
+                    {% endif %}
+                </div>
+                {% empty %}
+                <div class="empty-state empty-state-sm">
+                    <p>No additional members yet.</p>
+                </div>
+                {% endfor %}
+
+            </div>
+        </div>
+    </div>
+
+    <!-- Add member -->
+    {% if is_manager %}
+    <aside class="members-sidebar">
+        <div class="card">
+            <div class="card-header"><h2 class="card-title">Add Member</h2></div>
+            <div class="card-body">
+                <form method="post" action="{% url 'project_add_member' pk=project.pk %}" novalidate>
+                    {% csrf_token %}
+                    <div class="form-group">
+                        <label for="{{ add_form.username.id_for_label }}" class="form-label">Username</label>
+                        {{ add_form.username }}
+                        {% if add_form.username.errors %}
+                            <ul class="form-errors">{% for e in add_form.username.errors %}<li>{{ e }}</li>{% endfor %}</ul>
+                        {% endif %}
+                        <p class="form-help">Enter the exact username of a registered user.</p>
+                    </div>
+                    <button type="submit" class="btn btn-primary btn-full">Add to Project</button>
+                </form>
+            </div>
+        </div>
+    </aside>
+    {% endif %}
+
+</div>
+{% endblock %}

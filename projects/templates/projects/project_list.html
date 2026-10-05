@@ -1,0 +1,71 @@
+{% extends 'projects/base.html' %}
+
+{% block title %}Projects{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <div class="page-header-content">
+        <h1 class="page-title">Projects</h1>
+        <p class="page-subtitle">All projects you own or belong to.</p>
+    </div>
+    <a href="{% url 'project_create' %}" class="btn btn-primary">+ New Project</a>
+</div>
+
+{% if projects %}
+<div class="project-table-wrapper">
+    <table class="data-table">
+        <thead>
+            <tr>
+                <th>Project</th>
+                <th>Owner</th>
+                <th>Status</th>
+                <th>Members</th>
+                <th>Tasks</th>
+                <th>Updated</th>
+                <th></th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for project in projects %}
+            <tr>
+                <td>
+                    <div class="table-project-name">
+                        <span class="project-initial-sm">{{ project.name|slice:":1"|upper }}</span>
+                        <div>
+                            <a href="{% url 'project_detail' pk=project.pk %}" class="table-link">{{ project.name }}</a>
+                            {% if project.description %}
+                            <p class="table-sub">{{ project.description|truncatechars:60 }}</p>
+                            {% endif %}
+                        </div>
+                    </div>
+                </td>
+                <td>
+                    <a href="{% url 'user_profile' username=project.owner.username %}" class="table-link-muted">
+                        {{ project.owner.username }}
+                    </a>
+                </td>
+                <td><span class="status-badge status-{{ project.status }}">{{ project.get_status_display }}</span></td>
+                <td>{{ project.member_count }}</td>
+                <td>{{ project.task_count }}</td>
+                <td><span class="time-muted">{{ project.updated_at|date:"M d, Y" }}</span></td>
+                <td>
+                    <div class="table-actions">
+                        <a href="{% url 'project_detail' pk=project.pk %}" class="btn btn-sm btn-outline">Open</a>
+                        <a href="{% url 'board' pk=project.pk %}" class="btn btn-sm btn-ghost">Board</a>
+                    </div>
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+{% else %}
+<div class="empty-state">
+    <div class="empty-icon">📁</div>
+    <h3>No projects yet</h3>
+    <p>You don't own or belong to any projects. Create one to get started.</p>
+    <a href="{% url 'project_create' %}" class="btn btn-primary">Create Your First Project</a>
+</div>
+{% endif %}
+
+{% endblock %}

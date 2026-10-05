@@ -1,0 +1,190 @@
+{% extends 'projects/base.html' %}
+
+{% block title %}{{ project.name }}{% endblock %}
+
+{% block content %}
+
+<!-- Project Header -->
+<div class="page-header project-header">
+    <div class="project-header-left">
+        <div class="project-avatar-lg">{{ project.name|slice:":1"|upper }}</div>
+        <div>
+            <div class="project-header-meta">
+                <a href="{% url 'project_list' %}" class="breadcrumb-link">Projects</a>
+                <span class="breadcrumb-sep">›</span>
+                <span>{{ project.name }}</span>
+            </div>
+            <h1 class="page-title">{{ project.name }}</h1>
+            <div class="project-meta-row">
+                <span class="status-badge status-{{ project.status }}">{{ project.get_status_display }}</span>
+                <span class="meta-sep">·</span>
+                <span class="meta-text">Owner: <a href="{% url 'user_profile' username=project.owner.username %}">{{ project.owner.username }}</a></span>
+                <span class="meta-sep">·</span>
+                <span class="meta-text">Created {{ project.created_at|date:"M d, Y" }}</span>
+            </div>
+        </div>
+    </div>
+    <div class="project-header-actions">
+        <a href="{% url 'board' pk=project.pk %}" class="btn btn-primary">View Board</a>
+        {% if is_manager %}
+        <a href="{% url 'project_edit' pk=project.pk %}" class="btn btn-outline">Edit Project</a>
+        {% endif %}
+    </div>
+</div>
+
+<!-- Project Nav -->
+<nav class="project-subnav">
+    <a href="{% url 'project_detail' pk=project.pk %}" class="subnav-link active">Overview</a>
+    <a href="{% url 'board' pk=project.pk %}" class="subnav-link">Board</a>
+    <a href="{% url 'project_members' pk=project.pk %}" class="subnav-link">Members ({{ project.member_count }})</a>
+    <a href="{% url 'task_create' project_pk=project.pk %}" class="subnav-link">+ New Task</a>
+</nav>
+
+<div class="project-detail-grid">
+
+    <!-- Left: Description + Stats -->
+    <div class="project-detail-main">
+
+        <!-- Description -->
+        <div class="card">
+            <div class="card-header"><h2 class="card-title">About this project</h2></div>
+            <div class="card-body">
+                {% if project.description %}
+                    <p class="project-description">{{ project.description|linebreaksbr }}</p>
+                {% else %}
+                    <p class="text-muted">No description provided.</p>
+                {% endif %}
+            </div>
+        </div>
+
+        <!-- Task Stats -->
+        <div class="card">
+            <div class="card-header">
+                <h2 class="card-title">Task Overview</h2>
+                <a href="{% url 'task_create' project_pk=project.pk %}" class="btn btn-sm btn-primary">+ New Task</a>
+            </div>
+            <div class="card-body">
+                <div class="task-stats-grid">
+                    <div class="task-stat-item stat-todo">
+                        <span class="task-stat-num">{{ stats.todo }}</span>
+                        <span class="task-stat-label">To Do</span>
+                    </div>
+                    <div class="task-stat-item stat-inprogress">
+                        <span class="task-stat-num">{{ stats.in_progress }}</span>
+                        <span class="task-stat-label">In Progress</span>
+                    </div>
+                    <div class="task-stat-item stat-review">
+                        <span class="task-stat-num">{{ stats.review }}</span>
+                        <span class="task-stat-label">Review</span>
+                    </div>
+                    <div class="task-stat-item stat-done">
+                        <span class="task-stat-num">{{ stats.done }}</span>
+                        <span class="task-stat-label">Done</span>
+                    </div>
+                </div>
+
+                {% if stats.total > 0 %}
+                <div class="progress-bar-wrap">
+                    <div class="progress-bar">
+                        <div class="progress-fill" style="width: {% widthratio stats.done stats.total 100 %}%"></div>
+                    </div>
+                    <span class="progress-label">{% widthratio stats.done stats.total 100 %}% complete</span>
+                </div>
+                {% endif %}
+
+                {% if stats.high_urgent > 0 %}
+                <p class="urgent-notice">⚠ {{ stats.high_urgent }} high/urgent task{{ stats.high_urgent|pluralize }} need attention.</p>
+                {% endif %}
+            </div>
+        </div>
+
+        <!-- Recent Tasks -->
+        <div class="card">
+            <div class="card-header">
+                <h2 class="card-title">Recent Tasks</h2>
+                <a href="{% url 'board' pk=project.pk %}" class="btn-text-link">View board →</a>
+            </div>
+            <div class="card-body p-0">
+                {% if recent_tasks %}
+                <div class="task-list">
+                    {% for task in recent_tasks %}
+                    <a href="{% url 'task_detail' pk=task.pk %}" class="task-list-item">
+                        <span class="priority-dot priority-dot-{{ task.priority }}"></span>
+                        <div class="task-list-info">
+                            <span class="task-list-title">{{ task.title }}</span>
+                            {% if task.assigned_to %}
+                            <span class="task-list-assignee">→ {{ task.assigned_to.username }}</span>
+                            {% endif %}
+                        </div>
+                        <div class="task-list-meta">
+                            <span class="status-badge status-{{ task.status }}">{{ task.get_status_display }}</span>
+                            {% if task.due_date %}
+                            <span class="due-date {% if task.is_overdue %}overdue{% endif %}">{{ task.due_date|date:"M d" }}</span>
+                            {% endif %}
+                        </div>
+                    </a>
+                    {% endfor %}
+                </div>
+                {% else %}
+                <div class="empty-state empty-state-sm">
+                    <p>No tasks yet. <a href="{% url 'task_create' project_pk=project.pk %}">Create the first task.</a></p>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+
+    <!-- Right: Members + Settings -->
+    <aside class="project-detail-sidebar">
+
+        <!-- Members -->
+        <div class="card">
+            <div class="card-header">
+                <h2 class="card-title">Members</h2>
+                <a href="{% url 'project_members' pk=project.pk %}" class="btn-text-link">Manage →</a>
+            </div>
+            <div class="card-body p-0">
+                <!-- Owner -->
+                <div class="member-item member-owner">
+                    <a href="{% url 'user_profile' username=project.owner.username %}" class="member-avatar-sm">
+                        {{ project.owner.username|slice:":1"|upper }}
+                    </a>
+                    <div class="member-info">
+                        <a href="{% url 'user_profile' username=project.owner.username %}" class="member-name">{{ project.owner.username }}</a>
+                        <span class="member-role role-owner">Owner</span>
+                    </div>
+                </div>
+                <!-- Other members -->
+                {% for membership in members %}
+                <div class="member-item">
+                    <a href="{% url 'user_profile' username=membership.user.username %}" class="member-avatar-sm">
+                        {{ membership.user.username|slice:":1"|upper }}
+                    </a>
+                    <div class="member-info">
+                        <a href="{% url 'user_profile' username=membership.user.username %}" class="member-name">{{ membership.user.username }}</a>
+                        <span class="member-role role-{{ membership.role }}">{{ membership.get_role_display }}</span>
+                    </div>
+                </div>
+                {% empty %}
+                <p class="sidebar-empty">Only the owner so far.</p>
+                {% endfor %}
+            </div>
+        </div>
+
+        <!-- Project Settings -->
+        {% if is_manager %}
+        <div class="card">
+            <div class="card-header"><h2 class="card-title">Settings</h2></div>
+            <div class="card-body">
+                <a href="{% url 'project_edit' pk=project.pk %}" class="btn btn-outline btn-full">Edit Project</a>
+                <a href="{% url 'project_members' pk=project.pk %}" class="btn btn-ghost btn-full mt-sm">Manage Members</a>
+                {% if project.owner == request.user %}
+                <a href="{% url 'project_delete' pk=project.pk %}" class="btn btn-danger-outline btn-full mt-sm">Delete Project</a>
+                {% endif %}
+            </div>
+        </div>
+        {% endif %}
+
+    </aside>
+</div>
+{% endblock %}

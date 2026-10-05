@@ -1,0 +1,68 @@
+{% extends 'projects/base.html' %}
+
+{% block title %}Login{% endblock %}
+{% block body_class %}auth-page{% endblock %}
+
+{% block content %}
+<div class="auth-wrapper">
+    <div class="auth-card">
+
+        <div class="auth-header">
+            <a href="{% url 'home' %}" class="auth-brand">
+                <span class="auth-brand-icon">⬡</span>
+                <span>ProjectFlow</span>
+            </a>
+            <h1 class="auth-title">Welcome back</h1>
+            <p class="auth-subtitle">Sign in to continue to your projects</p>
+        </div>
+
+        <form method="post" action="{% url 'login' %}" class="auth-form" novalidate>
+            {% csrf_token %}
+            {% if request.GET.next %}
+                <input type="hidden" name="next" value="{{ request.GET.next }}">
+            {% endif %}
+
+            <div class="form-group">
+                <label for="{{ form.username.id_for_label }}" class="form-label">Username</label>
+                {{ form.username }}
+                {% if form.username.errors %}
+                    <ul class="form-errors">
+                        {% for error in form.username.errors %}<li>{{ error }}</li>{% endfor %}
+                    </ul>
+                {% endif %}
+            </div>
+
+            <div class="form-group">
+                <label for="{{ form.password.id_for_label }}" class="form-label">Password</label>
+                {{ form.password }}
+                {% if form.password.errors %}
+                    <ul class="form-errors">
+                        {% for error in form.password.errors %}<li>{{ error }}</li>{% endfor %}
+                    </ul>
+                {% endif %}
+            </div>
+
+            <button type="submit" class="btn btn-primary btn-full btn-lg">Sign In</button>
+        </form>
+
+        <div class="auth-footer">
+            <p>Don't have an account? <a href="{% url 'register' %}" class="auth-link">Create one free</a></p>
+        </div>
+
+    </div>
+
+    <!-- decorative side panel -->
+    <div class="auth-side" aria-hidden="true">
+        <div class="auth-side-content">
+            <h2>Collaborate. Organise. Deliver.</h2>
+            <p>Manage your team's projects, tasks, and conversations all in one place.</p>
+            <ul class="auth-features">
+                <li>✓ Visual project boards</li>
+                <li>✓ Task assignment &amp; tracking</li>
+                <li>✓ Team communication</li>
+                <li>✓ Progress dashboards</li>
+            </ul>
+        </div>
+    </div>
+</div>
+{% endblock %}

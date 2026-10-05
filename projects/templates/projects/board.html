@@ -1,0 +1,151 @@
+{% extends 'projects/base.html' %}
+
+{% block title %}Board – {{ project.name }}{% endblock %}
+
+{% block content %}
+
+<!-- Board Header -->
+<div class="page-header">
+    <div>
+        <div class="project-header-meta">
+            <a href="{% url 'project_detail' pk=project.pk %}" class="breadcrumb-link">{{ project.name }}</a>
+            <span class="breadcrumb-sep">›</span>
+            <span>Board</span>
+        </div>
+        <h1 class="page-title">{{ board.name }}</h1>
+        <p class="page-subtitle">{{ project.task_count }} task{{ project.task_count|pluralize }} across all columns</p>
+    </div>
+    <a href="{% url 'task_create' project_pk=project.pk %}" class="btn btn-primary">+ New Task</a>
+</div>
+
+<!-- Project Nav -->
+<nav class="project-subnav">
+    <a href="{% url 'project_detail' pk=project.pk %}" class="subnav-link">Overview</a>
+    <a href="{% url 'board' pk=project.pk %}" class="subnav-link active">Board</a>
+    <a href="{% url 'project_members' pk=project.pk %}" class="subnav-link">Members ({{ project.member_count }})</a>
+</nav>
+
+<!-- Board Filters -->
+<div class="board-filters">
+    <form method="get" action="{% url 'board' pk=project.pk %}" class="filter-form" id="boardFilterForm">
+        <div class="filter-group">
+            <label for="assigneeFilter" class="filter-label">Assignee:</label>
+            <select name="assignee" id="assigneeFilter" class="form-control form-control-sm" onchange="this.form.submit()">
+                <option value="">All members</option>
+                <option value="unassigned" {% if assignee_filter == 'unassigned' %}selected{% endif %}>Unassigned</option>
+                {% for member in members %}
+                <option value="{{ member.username }}" {% if assignee_filter == member.username %}selected{% endif %}>
+                    {{ member.username }}
+                </option>
+                {% endfor %}
+            </select>
+        </div>
+        <div class="filter-group">
+            <label for="priorityFilter" class="filter-label">Priority:</label>
+            <select name="priority" id="priorityFilter" class="form-control form-control-sm" onchange="this.form.submit()">
+                <option value="">All priorities</option>
+                {% for value, label in priority_choices %}
+                <option value="{{ value }}" {% if priority_filter == value %}selected{% endif %}>{{ label }}</option>
+                {% endfor %}
+            </select>
+        </div>
+        {% if assignee_filter or priority_filter %}
+        <a href="{% url 'board' pk=project.pk %}" class="btn btn-sm btn-ghost filter-clear">Clear filters</a>
+        {% endif %}
+    </form>
+</div>
+
+<!-- Kanban Board -->
+<div class="kanban-board" id="kanbanBoard">
+
+    {% for status_key, col in columns.items %}
+    <div class="kanban-col {{ col.css_class }}" data-status="{{ col.key }}">
+
+        <!-- Column Header -->
+        <div class="kanban-col-header">
+            <div class="kanban-col-title">
+                <span class="col-dot col-dot-{{ col.key }}"></span>
+                {{ col.label }}
+                <span class="kanban-col-count">{{ col.tasks|length }}</span>
+            </div>
+            <a href="{% url 'task_create' project_pk=project.pk %}?status={{ col.key }}"
+               class="kanban-add-btn" title="Add task to {{ col.label }}" aria-label="Add task to {{ col.label }}">+</a>
+        </div>
+
+        <!-- Task Cards -->
+        <div class="kanban-cards" data-column="{{ col.key }}">
+            {% for task in col.tasks %}
+            <div class="task-card priority-border-{{ task.priority }}" id="task-card-{{ task.pk }}">
+
+                <!-- Card Top: Priority + Actions -->
+                <div class="task-card-top">
+                    <span class="priority-badge priority-{{ task.priority }}">{{ task.get_priority_display }}</span>
+                    <div class="task-card-actions">
+                        <a href="{% url 'task_edit' pk=task.pk %}" class="card-action-btn" title="Edit task" aria-label="Edit {{ task.title }}">✏</a>
+                        {% if is_manager or task.created_by == request.user %}
+                        <a href="{% url 'task_delete' pk=task.pk %}" class="card-action-btn card-action-delete"
+                           title="Delete task" aria-label="Delete {{ task.title }}"
+                           onclick="return confirm('Delete task \'{{ task.title|escapejs }}\'?')">🗑</a>
+                        {% endif %}
+                    </div>
+                </div>
+
+                <!-- Card Title -->
+                <a href="{% url 'task_detail' pk=task.pk %}" class="task-card-title">{{ task.title }}</a>
+
+                <!-- Short description -->
+                {% if task.description %}
+                <p class="task-card-desc">{{ task.description|truncatechars:80 }}</p>
+                {% endif %}
+
+                <!-- Card Footer -->
+                <div class="task-card-footer">
+                    <div class="task-card-meta">
+                        {% if task.assigned_to %}
+                        <a href="{% url 'user_profile' username=task.assigned_to.username %}" class="assignee-chip" title="{{ task.assigned_to.username }}">
+                            {{ task.assigned_to.username|slice:":1"|upper }}
+                        </a>
+                        {% else %}
+                        <span class="assignee-chip assignee-empty" title="Unassigned">?</span>
+                        {% endif %}
+
+                        {% if task.due_date %}
+                        <span class="card-due-date {% if task.is_overdue %}overdue{% endif %}" title="Due {{ task.due_date }}">
+                            📅 {{ task.due_date|date:"M d" }}
+                        </span>
+                        {% endif %}
+
+                        {% if task.comment_count %}
+                        <span class="card-comment-count" title="{{ task.comment_count }} comment{{ task.comment_count|pluralize }}">
+                            💬 {{ task.comment_count }}
+                        </span>
+                        {% endif %}
+                    </div>
+
+                    <!-- Quick status change -->
+                    <form method="post" action="{% url 'task_change_status' pk=task.pk %}" class="card-status-form">
+                        {% csrf_token %}
+                        <input type="hidden" name="next" value="board">
+                        <select name="status" class="card-status-select" onchange="this.form.submit()"
+                                aria-label="Change status for {{ task.title }}">
+                            {% for value, label in status_choices %}
+                            <option value="{{ value }}" {% if task.status == value %}selected{% endif %}>{{ label }}</option>
+                            {% endfor %}
+                        </select>
+                    </form>
+                </div>
+
+            </div>
+            {% empty %}
+            <div class="kanban-empty">
+                <p>No tasks here</p>
+                <a href="{% url 'task_create' project_pk=project.pk %}?status={{ col.key }}" class="btn-text-link">+ Add one</a>
+            </div>
+            {% endfor %}
+        </div>
+
+    </div>
+    {% endfor %}
+
+</div>
+{% endblock %}

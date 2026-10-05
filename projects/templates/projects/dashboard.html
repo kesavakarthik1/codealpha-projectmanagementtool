@@ -1,0 +1,139 @@
+{% extends 'projects/base.html' %}
+
+{% block title %}Dashboard{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <div class="page-header-content">
+        <h1 class="page-title">Welcome back, {{ user.first_name|default:user.username }}!</h1>
+        <p class="page-subtitle">Here's what's happening across your projects.</p>
+    </div>
+    <a href="{% url 'project_create' %}" class="btn btn-primary">+ New Project</a>
+</div>
+
+<!-- Stats Row -->
+<div class="stats-grid">
+    <div class="stat-card stat-blue">
+        <div class="stat-value">{{ stats.total_projects }}</div>
+        <div class="stat-label">Total Projects</div>
+    </div>
+    <div class="stat-card stat-purple">
+        <div class="stat-value">{{ stats.total_tasks }}</div>
+        <div class="stat-label">Total Tasks</div>
+    </div>
+    <div class="stat-card stat-orange">
+        <div class="stat-value">{{ stats.in_progress_tasks }}</div>
+        <div class="stat-label">In Progress</div>
+    </div>
+    <div class="stat-card stat-yellow">
+        <div class="stat-value">{{ stats.review_tasks }}</div>
+        <div class="stat-label">In Review</div>
+    </div>
+    <div class="stat-card stat-green">
+        <div class="stat-value">{{ stats.completed_tasks }}</div>
+        <div class="stat-label">Completed</div>
+    </div>
+    <div class="stat-card stat-red">
+        <div class="stat-value">{{ stats.high_urgent_tasks }}</div>
+        <div class="stat-label">High / Urgent</div>
+    </div>
+</div>
+
+<div class="dashboard-grid">
+
+    <!-- My Tasks -->
+    <section class="dash-section">
+        <div class="section-header">
+            <h2 class="section-title-sm">My Open Tasks</h2>
+        </div>
+        {% if my_tasks %}
+        <div class="task-list">
+            {% for task in my_tasks %}
+            <a href="{% url 'task_detail' pk=task.pk %}" class="task-list-item">
+                <span class="priority-dot priority-dot-{{ task.priority }}"></span>
+                <div class="task-list-info">
+                    <span class="task-list-title">{{ task.title }}</span>
+                    <span class="task-list-project">{{ task.project.name }}</span>
+                </div>
+                <div class="task-list-meta">
+                    <span class="status-badge status-{{ task.status }}">{{ task.get_status_display }}</span>
+                    {% if task.due_date %}
+                        <span class="due-date {% if task.is_overdue %}overdue{% endif %}">
+                            {% if task.is_overdue %}⚠ {% endif %}{{ task.due_date|date:"M d" }}
+                        </span>
+                    {% endif %}
+                </div>
+            </a>
+            {% endfor %}
+        </div>
+        {% else %}
+        <div class="empty-state empty-state-sm">
+            <p>No open tasks assigned to you.</p>
+        </div>
+        {% endif %}
+    </section>
+
+    <!-- Recent Activity -->
+    <section class="dash-section">
+        <div class="section-header">
+            <h2 class="section-title-sm">Recent Task Activity</h2>
+        </div>
+        {% if recent_tasks %}
+        <div class="task-list">
+            {% for task in recent_tasks %}
+            <a href="{% url 'task_detail' pk=task.pk %}" class="task-list-item">
+                <span class="priority-dot priority-dot-{{ task.priority }}"></span>
+                <div class="task-list-info">
+                    <span class="task-list-title">{{ task.title }}</span>
+                    <span class="task-list-project">{{ task.project.name }}</span>
+                </div>
+                <div class="task-list-meta">
+                    <span class="status-badge status-{{ task.status }}">{{ task.get_status_display }}</span>
+                    <span class="time-ago">{{ task.updated_at|timesince }} ago</span>
+                </div>
+            </a>
+            {% endfor %}
+        </div>
+        {% else %}
+        <div class="empty-state empty-state-sm">
+            <p>No task activity yet. <a href="{% url 'project_create' %}">Create a project</a> to get started.</p>
+        </div>
+        {% endif %}
+    </section>
+
+</div>
+
+<!-- Projects -->
+<section class="dash-projects">
+    <div class="section-header">
+        <h2 class="section-title-sm">Your Projects</h2>
+        <a href="{% url 'project_list' %}" class="btn-text-link">View all →</a>
+    </div>
+
+    {% if projects %}
+    <div class="project-cards-grid">
+        {% for project in projects %}
+        <a href="{% url 'project_detail' pk=project.pk %}" class="project-card">
+            <div class="project-card-header">
+                <span class="project-card-initial">{{ project.name|slice:":1"|upper }}</span>
+                <span class="project-status-badge status-{{ project.status }}">{{ project.get_status_display }}</span>
+            </div>
+            <h3 class="project-card-name">{{ project.name }}</h3>
+            <p class="project-card-desc">{{ project.description|truncatechars:80 }}</p>
+            <div class="project-card-footer">
+                <span class="project-card-stat">👥 {{ project.member_count }}</span>
+                <span class="project-card-stat">✅ {{ project.task_count }} tasks</span>
+            </div>
+        </a>
+        {% endfor %}
+    </div>
+    {% else %}
+    <div class="empty-state">
+        <div class="empty-icon">📁</div>
+        <h3>No projects yet</h3>
+        <p>Create your first project to get started.</p>
+        <a href="{% url 'project_create' %}" class="btn btn-primary">Create Project</a>
+    </div>
+    {% endif %}
+</section>
+{% endblock %}

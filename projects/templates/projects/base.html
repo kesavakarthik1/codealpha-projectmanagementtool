@@ -1,0 +1,108 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="ProjectFlow – Collaborative Project Management Tool">
+    <title>{% block title %}ProjectFlow{% endblock %} | ProjectFlow</title>
+    <link rel="stylesheet" href="{% static 'projects/css/style.css' %}">
+    {% block extra_css %}{% endblock %}
+</head>
+<body class="{% block body_class %}{% endblock %}">
+
+    <!-- ================================================================
+         NAVIGATION
+    ================================================================ -->
+    <nav class="navbar" id="navbar">
+        <div class="nav-container">
+
+            <!-- Brand -->
+            <a href="{% url 'home' %}" class="nav-brand">
+                <span class="nav-brand-icon">⬡</span>
+                <span class="nav-brand-text">ProjectFlow</span>
+            </a>
+
+            <!-- Desktop nav links -->
+            <ul class="nav-links" id="navLinks">
+                {% if user.is_authenticated %}
+                    <li><a href="{% url 'dashboard' %}" class="nav-link {% if request.resolver_match.url_name == 'dashboard' %}active{% endif %}">Dashboard</a></li>
+                    <li><a href="{% url 'project_list' %}" class="nav-link {% if 'project' in request.resolver_match.url_name %}active{% endif %}">Projects</a></li>
+                    <li><a href="{% url 'project_create' %}" class="nav-link nav-link-create">+ New Project</a></li>
+                    <li>
+                        <form class="nav-search-form" action="{% url 'search' %}" method="get">
+                            <input type="text" name="q" placeholder="Search…" class="nav-search-input"
+                                   value="{{ request.GET.q }}" aria-label="Search projects and tasks">
+                            <button type="submit" class="nav-search-btn" aria-label="Submit search">&#128269;</button>
+                        </form>
+                    </li>
+                    <li class="nav-user-menu">
+                        <button class="nav-user-btn" id="userMenuBtn" aria-expanded="false" aria-haspopup="true">
+                            <span class="nav-avatar">{{ user.username|slice:":1"|upper }}</span>
+                            <span class="nav-username">{{ user.username }}</span>
+                            <span class="nav-caret">▾</span>
+                        </button>
+                        <ul class="nav-dropdown" id="userDropdown" role="menu">
+                            <li role="menuitem"><a href="{% url 'profile' %}">My Profile</a></li>
+                            <li role="menuitem"><a href="{% url 'dashboard' %}">Dashboard</a></li>
+                            <li class="dropdown-divider"></li>
+                            <li role="menuitem">
+                                <form method="post" action="{% url 'logout' %}">
+                                    {% csrf_token %}
+                                    <button type="submit" class="dropdown-logout-btn">Logout</button>
+                                </form>
+                            </li>
+                        </ul>
+                    </li>
+                {% else %}
+                    <li><a href="{% url 'home' %}" class="nav-link {% if request.resolver_match.url_name == 'home' %}active{% endif %}">Home</a></li>
+                    <li><a href="{% url 'login' %}" class="nav-link {% if request.resolver_match.url_name == 'login' %}active{% endif %}">Login</a></li>
+                    <li><a href="{% url 'register' %}" class="nav-btn-register">Get Started</a></li>
+                {% endif %}
+            </ul>
+
+            <!-- Hamburger for mobile -->
+            <button class="nav-hamburger" id="navHamburger" aria-label="Toggle navigation" aria-expanded="false">
+                <span></span><span></span><span></span>
+            </button>
+
+        </div>
+    </nav>
+
+    <!-- ================================================================
+         MESSAGES
+    ================================================================ -->
+    {% if messages %}
+    <div class="messages-container" id="messagesContainer" aria-live="polite">
+        {% for message in messages %}
+        <div class="message message-{{ message.tags }}" role="alert">
+            <span class="message-text">{{ message }}</span>
+            <button class="message-close" aria-label="Dismiss" onclick="this.parentElement.remove()">×</button>
+        </div>
+        {% endfor %}
+    </div>
+    {% endif %}
+
+    <!-- ================================================================
+         MAIN CONTENT
+    ================================================================ -->
+    <main class="main-content" id="mainContent">
+        {% block content %}{% endblock %}
+    </main>
+
+    <!-- ================================================================
+         FOOTER
+    ================================================================ -->
+    <footer class="footer">
+        <div class="footer-container">
+            <p class="footer-text">
+                <strong>ProjectFlow</strong> — CodeAlpha Full Stack Development Internship · Task 3
+            </p>
+            <p class="footer-sub">Built with Python · Django · HTML · CSS · Vanilla JavaScript</p>
+        </div>
+    </footer>
+
+    <script src="{% static 'projects/js/main.js' %}"></script>
+    {% block extra_js %}{% endblock %}
+</body>
+</html>

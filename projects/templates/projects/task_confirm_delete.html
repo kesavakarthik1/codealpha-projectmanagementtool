@@ -1,0 +1,31 @@
+{% extends 'projects/base.html' %}
+
+{% block title %}Delete – {{ task.title }}{% endblock %}
+
+{% block content %}
+<div class="form-page-wrapper form-page-narrow">
+    <div class="danger-card">
+        <div class="danger-icon">🗑</div>
+        <h1 class="danger-title">Delete Task</h1>
+        <p class="danger-text">
+            You are about to permanently delete the task
+            <strong>"{{ task.title }}"</strong>.
+            All comments on this task will also be deleted. This action cannot be undone.
+        </p>
+
+        <div class="danger-meta">
+            <p>Project: <strong>{{ project.name }}</strong></p>
+            <p>Comments: <strong>{{ task.comment_count }}</strong></p>
+            <p>Status: <strong>{{ task.get_status_display }}</strong></p>
+        </div>
+
+        <form method="post" action="{% url 'task_delete' pk=task.pk %}">
+            {% csrf_token %}
+            <div class="form-actions form-actions-center">
+                <a href="{% url 'task_detail' pk=task.pk %}" class="btn btn-ghost btn-lg">Cancel</a>
+                <button type="submit" class="btn btn-danger btn-lg">Yes, Delete Task</button>
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock %}
